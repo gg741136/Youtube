@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Jashan | Listenify</title>
+    <link rel="stylesheet" href="./style1.css"/>
+    <link rel="icon" href="./images.jpeg"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Icons" />
+  </head>
+  <body>
+    <div class="songs"></div>
+    <div class="playing">
+      <div class="wrapper">
+        <div class="top-bar">
+          <i class="material-symbols-outlined"> expand_more </i>
+          <span>Now Playing</span>
+          <i class="material-symbols-outlined"> more_horiz </i>
+        </div>
+        <div class="img-area">
+          <img src="./images.jpeg" alt="">
+        </div>
+        <div class="song-details">
+          <p class="name">Song-Name</p>
+          <p class="artist">Artist-Name</p>
+        </div>
+        <div class="progress-area">
+          <div class="progress-bar"></div>
+          <div class="timer">
+            <span class="current">0:00</span>
+            <span class="duration">0:00</span>
+          </div>
+          <audio id="main-audio" src=""></audio>
+        </div>
+        <div class="controls">
+          <i id="repeat-plist" class="material-icons" title="Playlist looped">repeat</i>
+          <i id="prev" class="material-icons">skip_previous</i>
+          <div class="play-pause">
+            <i class="material-icons">play_arrow</i>
+          </div>
+          <i id="next" class="material-icons">skip_next</i>
+          <i id="more-music" class="material-icons">queue_music</i>
+        </div>
+        <div class="music-list">
+          <div class="header">
+            <div class="row">
+              <i class="material-icons">queue_music</i>
+              <span>Music-List</span>
+            </div>
+            <i id="close" class="material-icons">close</i>
+          </div>
+          <ul class="unorder">
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+    <script>
+      module = {};
+    </script>
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getDatabase, get, ref, onChildAdded, onValue, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+  import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyD1SmH8j4gRphrCd0czjQAn6b3y31lntlg",
+    authDomain: "fir-2a769.firebaseapp.com",
+    databaseURL: "https://fir-2a769-default-rtdb.firebaseio.com",
+    projectId: "fir-2a769",
+    storageBucket: "fir-2a769.appspot.com",
+    messagingSenderId: "101957782959",
+    appId: "1:101957782959:web:9ea594f26220c18474b35a"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase();
+  const auth = getAuth();
+  
+  //variables
+  const wrapper = document.querySelector(".wrapper"),
+  musicImg = wrapper.querySelector(".img-area img"),
+  musicName = wrapper.querySelector(".song-details .name"),
+  mainAudio = wrapper.querySelector("#main-audio"),
+  playPauseBtn = wrapper.querySelector(".play-pause"),
+  musicArtist = wrapper.querySelector(".song-details .artist"),
+  prevBtn = wrapper.querySelector("#prev"),
+  nextBtn = wrapper.querySelector("#next"),
+  progressArea = wrapper.querySelector(".progress-area"),
+  progressBar = wrapper.querySelector(".progress-bar"),
+  musicList = wrapper.querySelector(".music-list"),
+  showMusicList = wrapper.querySelector("#more-music"),
+  hideMusicList = wrapper.querySelector("#close");
+  
+  const ulTag = wrapper.querySelector("ul");
+  const liAlTags = document.querySelectorAll(".songs .p_song");
+  showMusicList.addEventListener("click", ()=>{
+    musicList.classList.toggle("show");
+  });
+  
+  hideMusicList.addEventListener("click", ()=>{
+    showMusicList.click();
+  });
+  
+  let musicIndex = 1;
+  
+  //show
+  onChildAdded(ref(db, 'songs'), (data) =>{
+    var html = "";
+    html += "<div class=p_song data-id="+ data.key +"  onclick=module.play(this);>";
+     html += "<p id=p_title>";
+      html += data.val().name;
+     html += "</p>";
+     html += "<p id=p_artist>";
+      html += data.val().writer;
+     html += "</p>";
+     html += "<button id=active_btn>";
+      html += "<i class=material-symbols-outlined>play_arrow</i>";
+      html += "</button>";
+    html += "</div>";
+    document.querySelector('.songs').innerHTML += html;
+  });
+   //to play
+   module.play = function play(self){
+     var messageId = self.getAttribute("data-id");
+onValue(ref(db,'songs/' + messageId), (snapshot) => {
+  const data = snapshot.val();
+  document.querySelector('.playing').style.display = "flex";
+  document.querySelector('.songs').style.display = "none";
+  musicArtist.innerText = snapshot.val().writer;
+  musicName.innerText = snapshot.val().name;
+  musicImg.src = snapshot.val().logo;
+  mainAudio.src = snapshot.val().link;
+  pauseMusic();
+});
+   }
+   
+   
+   //play music function
+   function playMusic(){
+     wrapper.classList.add("paused");
+     playPauseBtn.querySelector("i").innerText = "pause";
+     mainAudio.play();
+   }
+   
+   //load music function
+   function loadMusic(indexnumber){
+     const dbref = ref(getDatabase());
+     get(child(dbref, `songs/${indexnumber}`)).then((snapshot) => {
+       if(snapshot.exists()){
+         musicArtist.innerText = snapshot.val().writer;
+  musicName.innerText = snapshot.val().name;
+  musicImg.src = snapshot.val().logo;
+  mainAudio.src = snapshot.val().link;
+  playMusic();
+       } else{
+         musicIndex = 0;
+         nextMusic();
+       }
+     }).catch((error) => {
+       console.error(error);
+     });
+   }
+   
+   //next music function
+   function nextMusic(){
+     //here we'll just incriment the index by 1
+     musicIndex++;
+       loadMusic(musicIndex);
+       progressBar.style.width = "0%";
+     pauseMusic();
+   }
+   
+   //prev music function
+   function prevMusic(){
+     //here we'll just incriment the index by 1
+     musicIndex--;
+       loadMusic(musicIndex);
+       progressBar.style.width = "0%";
+     pauseMusic();
+   }
+   
+   //pause music function
+   function pauseMusic(){
+     wrapper.classList.remove("paused");
+     playPauseBtn.querySelector("i").innerText = "play_arrow";
+     mainAudio.pause();
+   }
+   
+   //play or paise button event
+   playPauseBtn.addEventListener("click", ()=>{
+     const isMusicPaused = wrapper.classList.contains("paused");
+     //if isMusicPaused is true then call pauseMusic else call playMusic
+     isMusicPaused ? pauseMusic() : playMusic();
+   });
+   
+   //next music btn event
+   nextBtn.addEventListener("click", ()=>{
+     nextMusic(); //calling next music function
+   });
+   
+   //prev music btn event
+   prevBtn.addEventListener("click", ()=>{
+     prevMusic(); //calling next music function
+   })
+   
+   //update progress bar width according to music current time
+   mainAudio.addEventListener("timeupdate", (e)=>{
+     const currentTime = e.target.currentTime; //getting current time of song
+     const duration = e.target.duration; //getting to total duration of song
+     let progressWidth = (currentTime / duration) * 100;
+     progressBar.style.width = `${progressWidth}%`;
+     
+       let musicCurrentTime = wrapper.querySelector(".current"),
+      musicDuration = wrapper.querySelector(".duration");
+      
+     mainAudio.addEventListener("loadeddata", ()=>{
+      
+      //update song total duration
+      let audioDuration = mainAudio.duration;
+      let totalMin = Math.floor(audioDuration / 60);
+      let totalSec = Math.floor(audioDuration % 60);
+      if(totalSec < 10){
+        totalSec = `0${totalSec}`;
+      }
+      musicDuration.innerText = `${totalMin}:${totalSec}`;
+     });
+     
+      //update song total time
+      let currentMin = Math.floor(currentTime / 60);
+      let currentSec = Math.floor(currentTime % 60);
+      if(currentSec < 10){
+        currentSec = `0${currentSec}`;
+      }
+      musicCurrentTime.innerText = `${currentMin}:${currentSec}`;
+   });
+   
+   //let's update playing songs current time according to the progress bar width
+   progressArea.addEventListener("click", (e)=>{
+     let progresswidthval = progressArea.clientWidth; //getting width of progress bar
+     let clickedOffSetX = e.offsetX; //getting offset x value
+     let songDuration = mainAudio.duration; //getting song total duration
+     
+     mainAudio.currentTime = (clickedOffSetX / progresswidthval) * songDuration;
+     playMusic();
+   });
+   
+   //let's work on repeat, shuffle song according to tge incon
+   let repeatBtn = wrapper.querySelector("#repeat-plist");
+   repeatBtn.addEventListener("click", ()=>{
+     //first we get the innerText of the icon then we'll change accordingly
+     let getText = repeatBtn.innerText; //getting innerText of icon
+     switch(getText){
+       case "repeat": //if this icon is repeat then change into in repeat_one
+        repeatBtn.innerText = "repeat_one";
+        repeatBtn.setAttribute("title", "Song looped");
+        break;
+      case "repeat_one": //if this incon is repeat_one then change into in shuffle
+        repeatBtn.innerText = "shuffle";
+        repeatBtn.setAttribute("title", "Playback shuffle");
+        break;
+      case "shuffle": //if this incon is shuffle then change into in repeat
+        repeatBtn.innerText = "repeat";
+        repeatBtn.setAttribute("title", "Playlist looped");
+        break;
+     }
+   });
+   
+   //above we changed the icon, now let's work to do
+   //after the song ended
+   
+   mainAudio.addEventListener("ended", ()=>{
+     //we'll do according to the icon mean if user has set Icon to loop song then we'll repeat
+     // the current song and will do further accordingly
+     let getText = repeatBtn.innerText; //getting innerText of icon
+     switch(getText){
+       case "repeat": //if this icon is repeat then we caaling to next music function
+        nextMusic();
+        playMusic();
+        break;
+      case "repeat_one": //if this incon is repeat_one then change current to zero
+        mainAudio.currentTime = 0;
+        playMusic();
+        break;
+      case "shuffle": //if this incon is shuffle then call next m music function
+        nextMusic();
+        progressBar.style.width = "0%";
+        playMusic();
+        break;
+     }
+   });
+   
+   
+   //let's create li according to the array length
+   onChildAdded(ref(db, 'songs'), (snapshot) =>{
+     var html = "";
+     html += "<li id="+ snapshot.key +" data-id="+ snapshot.key +" li-index="+ snapshot.key +" onclick=module.ddddddd(this);>";
+      html += "<div class=row>";
+       html += "<span>";
+        html += snapshot.val().name;
+       html += "</span>";
+       html += "<p>";
+        html += snapshot.val().writer;
+       html += "</p>";
+      html += "</div>";
+      html += "<audio class=message-"+ snapshot.key +" src="+ snapshot.val().link +"></audio>"
+      html += "<span id=message-"+ snapshot.key +" class=audio-duration>";
+       html += "3:40";
+      html += "</span>";
+     html += "</li>";
+     ulTag.innerHTML += html;
+     
+     let liAudioDuration = ulTag.querySelector(`#message-${snapshot.key}`);
+     let liAudioTag = ulTag.querySelector(`.message-${snapshot.key}`);
+     
+     liAudioTag.addEventListener("loadeddata", ()=>{
+       let audioDuration = liAudioTag.duration;
+       let totalMin = Math.floor(audioDuration / 60);
+       let totalSec = Math.floor(audioDuration % 60);
+       if(totalSec < 10){
+         totalSec = `0${totalSec}`;
+       }
+         liAudioDuration.innerText = `${totalMin}:${totalSec}`;
+     });
+   });
+   
+   
+   module.ddddddd = function ddddddd(self){
+     var iddd = self.getAttribute("data-id");
+     onValue(ref(db, "songs/" +iddd), (snapshot) => {
+       musicArtist.innerText = snapshot.val().writer;
+  musicName.innerText = snapshot.val().name;
+  musicImg.src = snapshot.val().logo;
+  mainAudio.src = snapshot.val().link;
+       if(mainAudio.src == snapshot.val().link){
+         document.getElementById(snapshot.key).style.color = "green";
+         musicIndex = snapshot.key;
+       }else{
+         document.getElementById(snapshot.key).style.color = "white";
+       }
+       playMusic();
+     });
+   }
+ </script>
+  </body>
+</html>

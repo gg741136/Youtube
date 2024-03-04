@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Jashan | Listenify</title>
+    <link rel="icon" href="./images.jpeg">
+    <style>
+      img{
+        width: 200px;
+        height: 200px;
+        border: 2px solid black;
+      }
+    </style>
+  </head>
+  <body>
+    <label for="">Image Name</label> <input type="text" id="nameBox"> <label id="extLab"></label> <br><br>
+    <img id="myImg"> <label id="upprogress"></label> <br><br>
+    
+    
+    <button id="selbtn">Select Image</button>
+    <button id="upbtn">Upload Image</button>
+    <label id="url"></label>
+    <script type="module">
+      // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, onChildAdded , push} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+  // TODO Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+  apiKey: "AIzaSyD1SmH8j4gRphrCd0czjQAn6b3y31lntlg",
+  authDomain: "fir-2a769.firebaseapp.com",
+  databaseURL: "https://fir-2a769-default-rtdb.firebaseio.com",
+  projectId: "fir-2a769",
+  storageBucket: "fir-2a769.appspot.com",
+  messagingSenderId: "101957782959",
+  appId: "1:101957782959:web:9ea594f26220c18474b35a"
+};
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase();
+  
+  //----------variables & references----------//
+  var files = [];
+  var reader = new FileReader();
+  
+  var namebox = document.getElementById('nameBox');
+  var extlab = document.getElementById('extLab');
+  var myimg = document.getElementById('myImg');
+  var proglab = document.getElementById('upprogress');
+  var selBtn = document.getElementById('selbtn');
+  var UpBtn = document.getElementById('upbtn');
+  var urllab = document.getElementById('url');
+  
+  var input = document.createElement('input');
+  input.type = 'file';
+  
+  input.onchange = e =>{
+    files = e.target.files;
+    
+    var extention = GetFileExt(files[0]);
+    var name = GetFileName(files[0]);
+    
+    namebox.value = name;
+    extlab.innerHTML = extention;
+    
+    reader.readAsDataURL(files[0]);
+  }
+  
+  reader.onload = function(){
+    myimg.src = reader.result;
+  }
+  
+  //----------Selection----------//
+  
+  selBtn.onclick = function(){
+    input.click();
+  }
+  
+  function GetFileExt(file){
+    var temp = file.name.split('.');
+    var ext = temp.slice((temp.length-1),(temp.length));
+    return '.' + ext[0];
+  }
+  
+  function GetFileName(file){
+    var temp = file.name.split('.');
+    var fname = temp.slice(0,-1).join('.');
+    return fname;
+  }
+  
+  //----------Upload Process----------//
+  async function UploadProcess(){
+    var ImgToUpload = files[0];
+    
+    var ImgName = namebox.value + extlab.innerHTML;
+    
+    const metaData ={
+      contentType:ImgToUpload.type
+    }
+    
+    const storage = getStorage();
+    const storageRef = sRef(storage, "Images/"+ImgName);
+    const UploadTask = uploadBytesResumable(storageRef, ImgToUpload, metaData);
+    
+    UploadTask.on('state-changed', (snapshot)=>{
+      var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+      proglab.innerHTML = "Uploaded" + progress + "%";
+    },
+    (error) =>{
+      urllab.style.color = "red";
+      urllab.innerHTML = "Image : not Uploaded!";
+    },
+    ()=>{
+      getDownloadURL(UploadTask.snapshot.ref).then((DownloadUrl)=>{
+        urllab.style.color = "black";
+        urllab.innerHTML = "Download URL :" +DownloadUrl;
+      });
+    }
+    );
+  }
+  UpBtn.onclick = UploadProcess;
+    </script>
+  </body>
+</html>
